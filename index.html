@@ -44,8 +44,23 @@
         .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
         .checkbox-item input { width: auto; }
 
-        .drive-inputs { display: flex; gap: 6px; margin-top: 4px; }
-        .drive-inputs input { text-align: center; font-weight: 600; }
+        /* Traffic Control Module Styling */
+        .traffic-control-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-top: 6px; }
+        .traffic-slider-container { margin: 8px 0; }
+        .traffic-slider { 
+            -webkit-appearance: none; width: 100%; height: 8px; border-radius: 4px;
+            background: linear-gradient(to right, #22c55e 0%, #eab308 50%, #ef4444 100%); 
+            outline: none; cursor: pointer;
+        }
+        .traffic-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 18px; height: 18px; 
+            border-radius: 50%; background: #0f172a; border: 2px solid white; cursor: pointer;
+        }
+        .traffic-labels { display: flex; justify-content: space-between; font-size: 0.7rem; font-weight: 700; color: #64748b; margin-top: 2px; }
+
+        .active-zones-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; max-height: 120px; overflow-y: auto; }
+        .zone-chip { display: flex; justify-content: space-between; align-items: center; background: #f1f5f9; padding: 6px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; border-left: 4px solid #cbd5e1; }
+        .zone-chip button { width: auto; padding: 2px 6px; font-size: 0.7rem; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; }
 
         input, select, button { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; }
         button.primary { background: #2563eb; color: white; font-weight: 600; border: none; cursor: pointer; }
@@ -62,9 +77,22 @@
 
         #map { flex: 1; width: 100%; z-index: 1; }
         
-        .map-legend { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); line-height: 1.5; font-size: 0.8rem; min-width: 160px; z-index: 1000; color: #334155; }
+        .map-legend { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); line-height: 1.5; font-size: 0.8rem; min-width: 180px; z-index: 1000; color: #334155; }
         .legend-title { font-weight: 700; margin-bottom: 4px; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px; }
         .legend-item { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+
+        /* School Catchment Marker Label overrides */
+        .school-map-label {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #0284c7;
+            color: #0369a1;
+            font-weight: 700;
+            font-size: 0.72rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            white-space: nowrap;
+        }
 
         @media (min-width: 768px) {
             .mobile-header { display: none; }
@@ -107,13 +135,35 @@
                 <button id="slot-amenity-1" class="slot-btn" onclick="activateSlot('amenity-1')">🛒 Anchor Retail</button>
             </div>
 
-            <div class="section-title">3. Custom Drive Time Ranges</div>
-            <div class="form-group" style="margin-top:6px;">
-                <label style="font-size:0.75rem; font-weight:700; color:#475569;">Target Commutes (Minutes):</label>
-                <div class="drive-inputs">
-                    <input type="number" id="drive-time-1" value="15" min="5" max="90" placeholder="Zone 1">
-                    <input type="number" id="drive-time-2" value="30" min="5" max="90" placeholder="Zone 2">
-                    <button class="primary" onclick="generateCalculatedOverlays()" style="width: 100px;">Apply</button>
+            <div class="section-title">3. Add Commute & Traffic Zones</div>
+            <div class="traffic-control-box">
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <div style="flex: 1;">
+                        <label style="font-size:0.75rem; font-weight:700; color:#475569;">Travel Limit:</label>
+                        <div style="display:flex; align-items:center; gap:4px; margin-top:2px;">
+                            <input type="number" id="custom-drive-time" value="15" min="2" max="120" style="padding: 6px 8px;">
+                            <span style="font-size:0.8rem; font-weight:600;">min</span>
+                        </div>
+                    </div>
+                    <div style="flex: 1;">
+                        <button class="primary" onclick="addNewCommuteZone()" style="height: 36px; padding: 0 8px; font-size: 0.8rem; background: #0f172a; margin-top: 16px;">＋ Add Zone</button>
+                    </div>
+                </div>
+
+                <div style="margin-top: 10px;">
+                    <label style="font-size:0.75rem; font-weight:700; color:#475569;">Traffic Intensity for New Zone:</label>
+                    <div class="traffic-slider-container">
+                        <input type="range" id="traffic-multiplier" class="traffic-slider" min="1.0" max="2.2" step="0.1" value="1.0" oninput="updateTrafficBadge(this.value)">
+                    </div>
+                    <div class="traffic-labels">
+                        <span style="color: #22c55e;">Fluid (1x)</span>
+                        <span id="traffic-level-badge" style="background:#f1f5f9; padding: 2px 6px; border-radius: 4px; color:#0f172a;">Fluid</span>
+                        <span style="color: #ef4444;">Gridlock (2.2x)</span>
+                    </div>
+                </div>
+
+                <div class="active-zones-list" id="zones-payload">
+                    <!-- Added dynamic commute chips appear here -->
                 </div>
             </div>
 
@@ -121,15 +171,11 @@
             <div class="form-group" style="margin-top:6px;">
                 <div class="checkbox-group">
                     <div class="checkbox-item">
-                        <input type="checkbox" id="layer-isochrones" onchange="generateCalculatedOverlays()" checked>
-                        <label for="layer-isochrones" style="color:#d97706; font-weight:600;">⏱️ Custom Drive Time Zones</label>
+                        <input type="checkbox" id="layer-catchments" onchange="refreshVisualLayers()">
+                        <label for="layer-catchments" style="color:#0369a1; font-weight:600;">🎒 School Catchments (with Labels)</label>
                     </div>
                     <div class="checkbox-item">
-                        <input type="checkbox" id="layer-catchments" onchange="generateCalculatedOverlays()">
-                        <label for="layer-catchments" style="color:#0369a1; font-weight:600;">🎒 School Catchments (Fast-Load)</label>
-                    </div>
-                    <div class="checkbox-item">
-                        <input type="checkbox" id="layer-parishes" onchange="generateCalculatedOverlays()">
+                        <input type="checkbox" id="layer-parishes" onchange="refreshVisualLayers()">
                         <label for="layer-parishes" style="color:#7c3aed; font-weight:600;">🗺️ Parish Boundaries (Fast-Load)</label>
                     </div>
                 </div>
@@ -177,11 +223,17 @@
         let legendControl = null;
         
         let activeSlotType = null;
-        let isHousePlacementActive = true; // Defaulting to dynamic property placement on map click!
+        let isHousePlacementActive = true; 
         
         let anchors = { work: null, 'school-1': null, 'hospital-1': null, 'amenity-1': null };
         let properties = [];
         let selectedHouseId = null;
+
+        // Custom Multi-Commute Zones State
+        let commuteZones = [
+            { id: 1, timeMinutes: 15, trafficMultiplier: 1.0, color: '#22c55e', label: '15m (Fluid)' },
+            { id: 2, timeMinutes: 30, trafficMultiplier: 1.6, color: '#ef4444', label: '30m (Heavy)' }
+        ];
 
         const iconUrls = {
             work: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-black.png',
@@ -217,6 +269,79 @@
             document.getElementById('sidebar').classList.toggle('show');
         }
 
+        function updateTrafficBadge(val) {
+            const badge = document.getElementById('traffic-level-badge');
+            const multiplier = parseFloat(val);
+            if (multiplier <= 1.1) {
+                badge.innerText = 'Fluid';
+                badge.style.background = '#dcfce7';
+                badge.style.color = '#166534';
+            } else if (multiplier <= 1.5) {
+                badge.innerText = 'Moderate';
+                badge.style.background = '#fef9c3';
+                badge.style.color = '#854d0e';
+            } else if (multiplier <= 1.9) {
+                badge.innerText = 'Heavy';
+                badge.style.background = '#fee2e2';
+                badge.style.color = '#991b1b';
+            } else {
+                badge.innerText = 'Gridlock';
+                badge.style.background = '#f87171';
+                badge.style.color = 'white';
+            }
+        }
+
+        // Color interpolation from Green (fluid) -> Yellow (moderate) -> Red (gridlock)
+        function getTrafficColor(multiplier) {
+            if (multiplier <= 1.2) return '#22c55e'; // Green
+            if (multiplier <= 1.6) return '#eab308'; // Yellow/Orange
+            return '#ef4444'; // Red
+        }
+
+        function addNewCommuteZone() {
+            const mins = parseInt(document.getElementById('custom-drive-time').value) || 15;
+            const mult = parseFloat(document.getElementById('traffic-multiplier').value) || 1.0;
+            const color = getTrafficColor(mult);
+            
+            let labelSuffix = 'Fluid';
+            if (mult > 1.1 && mult <= 1.5) labelSuffix = 'Moderate';
+            else if (mult > 1.5 && mult <= 1.9) labelSuffix = 'Heavy';
+            else if (mult > 1.9) labelSuffix = 'Gridlock';
+
+            const newZone = {
+                id: Date.now(),
+                timeMinutes: mins,
+                trafficMultiplier: mult,
+                color: color,
+                label: `${mins}m (${labelSuffix})`
+            };
+
+            commuteZones.push(newZone);
+            rebuildZonesUI();
+            refreshVisualLayers();
+        }
+
+        function removeCommuteZone(id) {
+            commuteZones = commuteZones.filter(z => z.id !== id);
+            rebuildZonesUI();
+            refreshVisualLayers();
+        }
+
+        function rebuildZonesUI() {
+            const container = document.getElementById('zones-payload');
+            container.innerHTML = '';
+            commuteZones.forEach(z => {
+                const item = document.createElement('div');
+                item.className = 'zone-chip';
+                item.style.borderLeftColor = z.color;
+                item.innerHTML = `
+                    <span>⏱️ ${z.label}</span>
+                    <button onclick="removeCommuteZone(${z.id})">Remove</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
         async function teleportToGlobalTarget() {
             const cityQuery = document.getElementById('target-city').value.trim();
             if(!cityQuery) return;
@@ -227,8 +352,6 @@
                     const lat = parseFloat(data[0].lat);
                     const lon = parseFloat(data[0].lon);
                     map.setView([lat, lon], 13);
-                    
-                    // Automatically place property pin on search teleport
                     placeHousePin(L.latLng(lat, lon));
                 } else { alert("Location not found."); }
             } catch(e) { alert("Geocoding failed."); }
@@ -256,8 +379,7 @@
             if (window.innerWidth < 768) toggleMobileSidebar();
         }
 
-        // GENERATES THE SEARCH ISOCHRONES AND GEOMETRIES
-        function generateCalculatedOverlays() {
+        function refreshVisualLayers() {
             isochroneLayer.clearLayers();
             overlayLayers.clearLayers();
 
@@ -266,16 +388,12 @@
 
             const latlng = activeHouse.marker.getLatLng();
 
-            // Render Custom Isochrones
-            if (document.getElementById('layer-isochrones').checked) {
-                const val1 = parseInt(document.getElementById('drive-time-1').value) || 15;
-                const val2 = parseInt(document.getElementById('drive-time-2').value) || 30;
-                
-                // Fetch dynamic travel contours
-                fetchIsochrones(latlng, val1, val2);
-            }
+            // Fetch and render stacked custom drive-time isochrones sequentially
+            commuteZones.forEach(zone => {
+                fetchIsochroneForZone(latlng, zone);
+            });
 
-            // High Performance, instant local catchment render loop
+            // Local layers
             if (document.getElementById('layer-catchments').checked) {
                 renderMockSchoolCatchments(latlng);
             }
@@ -287,11 +405,15 @@
             updateLegendUI();
         }
 
-        async function fetchIsochrones(latlng, time1, time2) {
+        async function fetchIsochroneForZone(latlng, zone) {
             const url = 'https://api.openrouteservice.org/v2/isochrones/driving-car';
+            
+            // Under traffic congestion, we scale down the allowed reach:
+            const calculatedTimeSec = (zone.timeMinutes * 60) / zone.trafficMultiplier;
+
             const body = {
                 locations: [[latlng.lng, latlng.lat]],
-                range: [time1 * 60, time2 * 60], // convert minutes to seconds
+                range: [calculatedTimeSec],
                 range_type: 'time',
                 smoothing: 5
             };
@@ -304,46 +426,83 @@
                 });
                 if (response.ok) {
                     const data = await response.json();
-                    const colors = ['#f59e0b', '#ef4444'];
                     
                     L.geoJSON(data, {
-                        style: function (feature, index) {
+                        style: function () {
                             return {
                                 fillOpacity: 0.08,
-                                color: colors[feature.id] || '#ef4444',
-                                weight: 2
+                                color: zone.color,
+                                weight: 2.5
                             };
                         },
                         onEachFeature: function (feature, layer) {
-                            const valMin = Math.round(feature.properties.value / 60);
-                            layer.bindPopup(`<strong>${valMin}-Min Commute Zone</strong>`);
+                            layer.bindPopup(`<strong>Zone: ${zone.label}</strong>`);
                         }
                     }).addTo(isochroneLayer);
                 }
             } catch (e) {}
         }
 
-        // High-performance catchments rendered locally instantly
         function renderMockSchoolCatchments(center) {
             const schools = [
-                { name: "McDowall State School", offsetLat: 0.004, offsetLng: -0.005, radius: 1100 },
-                { name: "Craigslea State High School", offsetLat: -0.008, offsetLng: 0.012, radius: 1400 },
-                { name: "Aspley State School", offsetLat: 0.012, offsetLng: 0.008, radius: 1200 }
+                { 
+                    name: "McDowall State School", 
+                    type: "Primary (Prep - Year 6)",
+                    enrolmentCapacity: "1,044 students",
+                    offsetLat: 0.004, 
+                    offsetLng: -0.005, 
+                    radius: 1100 
+                },
+                { 
+                    name: "Craigslea State High School", 
+                    type: "Secondary (Years 7 - 12)",
+                    enrolmentCapacity: "1,200+ students",
+                    offsetLat: -0.008, 
+                    offsetLng: 0.012, 
+                    radius: 1400 
+                },
+                { 
+                    name: "Aspley State School", 
+                    type: "Primary (Prep - Year 6)",
+                    enrolmentCapacity: "Community Focused",
+                    offsetLat: 0.012, 
+                    offsetLng: 0.008, 
+                    radius: 1200 
+                }
             ];
 
             schools.forEach(sch => {
-                L.circle([center.lat + sch.offsetLat, center.lng + sch.offsetLng], {
+                const schoolLatLng = [center.lat + sch.offsetLat, center.lng + sch.offsetLng];
+
+                // 1. Draw the catchment ring
+                const catchmentRing = L.circle(schoolLatLng, {
                     color: '#0284c7',
                     fillColor: '#0ea5e9',
                     fillOpacity: 0.06,
                     weight: 1.5,
                     dashArray: '3, 5',
                     radius: sch.radius
-                }).addTo(overlayLayers).bindPopup(`<strong>${sch.name} Catchment Boundary</strong>`);
+                }).addTo(overlayLayers);
+
+                // 2. Bind a comprehensive details popup
+                catchmentRing.bindPopup(`
+                    <div style="font-family: sans-serif; line-height: 1.4; min-width: 180px;">
+                        <h4 style="margin: 0 0 4px; color: #0369a1;">${sch.name}</h4>
+                        <p style="margin: 0; font-size: 0.8rem; color: #475569;"><strong>Type:</strong> ${sch.type}</p>
+                        <p style="margin: 4px 0 0; font-size: 0.8rem; color: #475569;"><strong>Status:</strong> Enrolment Managed</p>
+                        <p style="margin: 2px 0 0; font-size: 0.75rem; color: #64748b;">Capacity: ${sch.enrolmentCapacity}</p>
+                    </div>
+                `);
+
+                // 3. Add a permanent text label directly on the map
+                catchmentRing.bindTooltip(sch.name, {
+                    permanent: true,
+                    direction: 'center',
+                    className: 'school-map-label'
+                }).openTooltip();
             });
         }
 
-        // High-performance parish lines rendered locally instantly
         function renderMockParishBoundaries(center) {
             const parishPoints = [
                 [center.lat + 0.015, center.lng - 0.015],
@@ -352,7 +511,6 @@
                 [center.lat - 0.015, center.lng - 0.015]
             ];
             
-            // Draw clean border layout
             L.polygon(parishPoints, {
                 color: '#7c3aed',
                 fillColor: '#7c3aed',
@@ -369,12 +527,10 @@
                 const div = L.DomUtil.create('div', 'map-legend');
                 div.innerHTML = `<div class="legend-title">Active Layers</div>`;
                 
-                if (document.getElementById('layer-isochrones').checked) {
-                    const val1 = document.getElementById('drive-time-1').value;
-                    const val2 = document.getElementById('drive-time-2').value;
-                    div.innerHTML += `<div class="legend-item"><div style="width:12px; height:12px; border-radius:50%; background:#f59e0b; opacity:0.6; display:inline-block;"></div><span>${val1}m Commute Zone</span></div>`;
-                    div.innerHTML += `<div class="legend-item"><div style="width:12px; height:12px; border-radius:50%; background:#ef4444; opacity:0.6; display:inline-block;"></div><span>${val2}m Commute Zone</span></div>`;
-                }
+                commuteZones.forEach(z => {
+                    div.innerHTML += `<div class="legend-item"><div style="width:12px; height:12px; border-radius:50%; background:${z.color}; opacity:0.6; display:inline-block;"></div><span>${z.label}</span></div>`;
+                });
+                
                 if (document.getElementById('layer-catchments').checked) {
                     div.innerHTML += `<div class="legend-item"><div style="width:16px; height:10px; border:1px dashed #0284c7; background:#0ea5e9; opacity:0.1;"></div><span>School Catchments</span></div>`;
                 }
@@ -451,7 +607,7 @@
             const targetProp = properties.find(p => p.id === id);
             if (targetProp) {
                 renderLiveDrivingCommutes(targetProp);
-                generateCalculatedOverlays();
+                refreshVisualLayers();
             }
             rebuildPayloadMatrixUI();
         }
@@ -489,16 +645,15 @@
             selectedHouseId = newProperty.id; 
             rebuildPayloadMatrixUI();
             runPropertyMatrixEvaluations(newProperty);
-            generateCalculatedOverlays();
+            refreshVisualLayers();
 
             pin.on('dragend', function() {
                 runPropertyMatrixEvaluations(newProperty);
-                generateCalculatedOverlays(); 
+                refreshVisualLayers(); 
             });
         }
 
         function handleCanvasMapTaps(e) {
-            // Context 1: Anchor Placement
             if (activeSlotType) {
                 if (anchors[activeSlotType]) map.removeLayer(anchors[activeSlotType].marker);
                 
@@ -515,7 +670,6 @@
                 return;
             }
 
-            // Context 2: Map click dynamic placement
             if (isHousePlacementActive) {
                 placeHousePin(e.latlng);
             }
@@ -536,7 +690,6 @@
                 const btn = document.getElementById(`slot-${key}`);
                 if(btn) btn.classList.remove('set', 'active');
             }
-            document.getElementById('layer-isochrones').checked = true;
             document.getElementById('layer-catchments').checked = false;
             document.getElementById('layer-parishes').checked = false;
             activeSlotType = null;
@@ -546,6 +699,11 @@
             switchMapStyle('street');
             document.getElementById('house-trigger-btn').style.background = '#16a34a';
             if (legendControl) map.removeControl(legendControl);
+            commuteZones = [
+                { id: 1, timeMinutes: 15, trafficMultiplier: 1.0, color: '#22c55e', label: '15m (Fluid)' },
+                { id: 2, timeMinutes: 30, trafficMultiplier: 1.6, color: '#ef4444', label: '30m (Heavy)' }
+            ];
+            rebuildZonesUI();
             rebuildPayloadMatrixUI();
         }
 
@@ -553,6 +711,8 @@
             document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
         }
 
+        // Initialize App UI States
+        rebuildZonesUI();
         map.on('click', handleCanvasMapTaps);
     </script>
 </body>
