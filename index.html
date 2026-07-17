@@ -44,6 +44,12 @@
         .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
         .checkbox-item input { width: auto; }
 
+        /* School Filter Controls */
+        .school-control-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px; margin-top: 6px; }
+        .range-slider-label { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; color: #1e40af; }
+        .radius-slider { -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: #bfdbfe; outline: none; margin: 8px 0; }
+        .radius-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #2563eb; cursor: pointer; }
+
         /* Traffic Control Module Styling */
         .traffic-control-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-top: 6px; }
         .traffic-slider-container { margin: 8px 0; }
@@ -75,22 +81,28 @@
         .badge-peak { background: #fee2e2; color: #991b1b; }
         .badge-off { background: #dcfce7; color: #166534; }
 
+        /* Distinct tags for school sectors */
+        .school-tag { display: inline-block; padding: 1px 4px; border-radius: 3px; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; margin-top: 2px; }
+        .school-tag-public { background: #dcfce7; color: #15803d; }
+        .school-tag-private { background: #dbeafe; color: #1d4ed8; }
+        .school-tag-catholic { background: #f3e8ff; color: #6b21a8; }
+
         #map { flex: 1; width: 100%; z-index: 1; }
         
         .map-legend { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); line-height: 1.5; font-size: 0.8rem; min-width: 180px; z-index: 1000; color: #334155; }
         .legend-title { font-weight: 700; margin-bottom: 4px; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px; }
         .legend-item { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
 
-        /* School Catchment Marker Label overrides */
+        /* Dynamic Map Labels */
         .school-map-label {
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid #0284c7;
-            color: #0369a1;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #2563eb;
+            color: #1e40af;
             font-weight: 700;
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             padding: 2px 6px;
             border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
             white-space: nowrap;
         }
 
@@ -130,7 +142,6 @@
             <div class="section-title">2. Fixed Infrastructure Anchors</div>
             <div class="anchor-deck">
                 <button id="slot-work" class="slot-btn" onclick="activateSlot('work')">💼 Work Anchor</button>
-                <button id="slot-school-1" class="slot-btn" onclick="activateSlot('school-1')">🏫 Anchor School</button>
                 <button id="slot-hospital-1" class="slot-btn" onclick="activateSlot('hospital-1')">🏥 Anchor Hosp</button>
                 <button id="slot-amenity-1" class="slot-btn" onclick="activateSlot('amenity-1')">🛒 Anchor Retail</button>
             </div>
@@ -163,32 +174,36 @@
                 </div>
 
                 <div class="active-zones-list" id="zones-payload">
-                    <!-- Added dynamic commute chips appear here -->
+                    <!-- Dynamic commute chips -->
                 </div>
             </div>
 
-            <div class="section-title">4. Map Overlays (Optimised)</div>
-            <div class="form-group" style="margin-top:6px;">
-                <div class="checkbox-group">
-                    <div class="checkbox-item">
-                        <input type="checkbox" id="layer-catchments" onchange="refreshVisualLayers()">
-                        <label for="layer-catchments" style="color:#0369a1; font-weight:600;">🎒 School Catchments (with Labels)</label>
-                    </div>
-                    <div class="checkbox-item">
-                        <input type="checkbox" id="layer-parishes" onchange="refreshVisualLayers()">
-                        <label for="layer-parishes" style="color:#7c3aed; font-weight:600;">🗺️ Parish Boundaries (Fast-Load)</label>
+            <div class="section-title">4. Dynamic School Filters</div>
+            <div class="school-control-box">
+                <div class="range-slider-label">
+                    <span>School Proximity Range:</span>
+                    <span id="radius-value-label" style="font-weight: 800;">3.0 km</span>
+                </div>
+                <input type="range" id="school-proximity-slider" class="radius-slider" min="1.0" max="8.0" step="0.5" value="3.0" oninput="updateRadiusSettings(this.value)">
+                
+                <div class="checkbox-group" style="border-top: 1px solid #cbd5e1; padding-top: 8px; margin-top: 4px;">
+                    <span style="font-size: 0.72rem; font-weight: 700; color: #1e40af; text-transform: uppercase;">School Sectors:</span>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 4px;">
+                        <div class="checkbox-item"><input type="checkbox" id="sector-public" checked onchange="refreshVisualLayers()"><label for="sector-public">Public</label></div>
+                        <div class="checkbox-item"><input type="checkbox" id="sector-private" checked onchange="refreshVisualLayers()"><label for="sector-private">Private</label></div>
+                        <div class="checkbox-item"><input type="checkbox" id="sector-catholic" checked onchange="refreshVisualLayers()"><label for="sector-catholic">Catholic</label></div>
                     </div>
                 </div>
             </div>
 
-            <div class="section-title">5. Tracked Properties & Commutes</div>
+            <div class="section-title">5. Tracked Properties & School Match</div>
             <div class="matrix-box">
                 <table class="matrix-table">
                     <thead>
                         <tr>
                             <th>Property</th>
                             <th>Work Commute</th>
-                            <th>Local Anchors</th>
+                            <th>Matched Schools</th>
                         </tr>
                     </thead>
                     <tbody id="matrix-payload">
@@ -218,16 +233,35 @@
         const map = L.map('map', { layers: [baseLayers.street] }).setView([-27.3826, 152.9922], 13); // McDowall, QLD
 
         let liveRoutesLayer = L.layerGroup().addTo(map);
-        let overlayLayers = L.layerGroup().addTo(map);
+        let schoolLayerGroup = L.layerGroup().addTo(map);
         let isochroneLayer = L.layerGroup().addTo(map);
         let legendControl = null;
         
         let activeSlotType = null;
         let isHousePlacementActive = true; 
         
-        let anchors = { work: null, 'school-1': null, 'hospital-1': null, 'amenity-1': null };
+        let anchors = { work: null, 'hospital-1': null, 'amenity-1': null };
         let properties = [];
         let selectedHouseId = null;
+        let currentSearchRadiusMeters = 3000; // Default 3km
+
+        // Master Brisbane North School Reference Database
+        const BRISBANE_SCHOOLS_DATABASE = [
+            { name: "McDowall State School", lat: -27.3786, lng: 152.9872, level: "Primary (Prep - 6)", sector: "public" },
+            { name: "Craigslea State High School", lat: -27.3906, lng: 153.0042, level: "Secondary (7 - 12)", sector: "public" },
+            { name: "Craigslea State School", lat: -27.3888, lng: 153.0035, level: "Primary (Prep - 6)", sector: "public" },
+            { name: "Aspley State School", lat: -27.3706, lng: 153.0102, level: "Primary (Prep - 6)", sector: "public" },
+            { name: "Aspley State High School", lat: -27.3615, lng: 153.0185, level: "Secondary (7 - 12)", sector: "public" },
+            { name: "Northside Christian College", lat: -27.3942, lng: 152.9944, level: "Prep - 12", sector: "private" },
+            { name: "Prince of Peace Lutheran College (Junior)", lat: -27.3989, lng: 152.9815, level: "Primary (Prep - 6)", sector: "private" },
+            { name: "Prince of Peace Lutheran College (Senior)", lat: -27.3915, lng: 152.9730, level: "Secondary (7 - 12)", sector: "private" },
+            { name: "Queen of Apostles Primary School", lat: -27.4082, lng: 153.0090, level: "Primary (Prep - 6)", sector: "catholic" },
+            { name: "Our Lady of the Assumption School", lat: -27.4021, lng: 152.9912, level: "Primary (Prep - 6)", sector: "catholic" },
+            { name: "Mt Maria College", lat: -27.4110, lng: 152.9805, level: "Secondary (7 - 12)", sector: "catholic" },
+            { name: "Albany Creek State School", lat: -27.3510, lng: 152.9720, level: "Primary (Prep - 6)", sector: "public" },
+            { name: "Albany Creek State High School", lat: -27.3452, lng: 152.9811, level: "Secondary (7 - 12)", sector: "public" },
+            { name: "All Saints Primary School", lat: -27.3485, lng: 152.9890, level: "Primary (Prep - 6)", sector: "catholic" }
+        ];
 
         // Custom Multi-Commute Zones State
         let commuteZones = [
@@ -237,22 +271,25 @@
 
         const iconUrls = {
             work: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-black.png',
-            'school-1': 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png',
             'hospital-1': 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png',
             'amenity-1': 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png',
-            house: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png'
+            house: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+            
+            // Distinct markers for school sectors
+            school_public: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+            school_private: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+            school_catholic: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-gold.png'
         };
 
         const routeColors = {
             work: '#dc2626',
-            'school-1': '#2563eb',
             'hospital-1': '#7c3aed',
             'amenity-1': '#ea580c'
         };
 
         function createCustomIcon(type) {
             return L.icon({
-                iconUrl: iconUrls[type],
+                iconUrl: iconUrls[type] || iconUrls.work,
                 shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
                 iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
             });
@@ -289,6 +326,13 @@
                 badge.style.background = '#f87171';
                 badge.style.color = 'white';
             }
+        }
+
+        function updateRadiusSettings(val) {
+            document.getElementById('radius-value-label').innerText = `${parseFloat(val).toFixed(1)} km`;
+            currentSearchRadiusMeters = parseFloat(val) * 1000;
+            refreshVisualLayers();
+            properties.forEach(p => runPropertyMatrixEvaluations(p));
         }
 
         // Color interpolation from Green (fluid) -> Yellow (moderate) -> Red (gridlock)
@@ -381,7 +425,7 @@
 
         function refreshVisualLayers() {
             isochroneLayer.clearLayers();
-            overlayLayers.clearLayers();
+            schoolLayerGroup.clearLayers();
 
             const activeHouse = properties.find(p => p.id === selectedHouseId);
             if (!activeHouse) return;
@@ -393,22 +437,14 @@
                 fetchIsochroneForZone(latlng, zone);
             });
 
-            // Local layers
-            if (document.getElementById('layer-catchments').checked) {
-                renderMockSchoolCatchments(latlng);
-            }
-
-            if (document.getElementById('layer-parishes').checked) {
-                renderMockParishBoundaries(latlng);
-            }
+            // Calculate and display proximity schools on the map canvas
+            renderSchoolsInProximityRadius(latlng);
 
             updateLegendUI();
         }
 
         async function fetchIsochroneForZone(latlng, zone) {
             const url = 'https://api.openrouteservice.org/v2/isochrones/driving-car';
-            
-            // Under traffic congestion, we scale down the allowed reach:
             const calculatedTimeSec = (zone.timeMinutes * 60) / zone.trafficMultiplier;
 
             const body = {
@@ -426,98 +462,68 @@
                 });
                 if (response.ok) {
                     const data = await response.json();
-                    
                     L.geoJSON(data, {
                         style: function () {
-                            return {
-                                fillOpacity: 0.08,
-                                color: zone.color,
-                                weight: 2.5
-                            };
-                        },
-                        onEachFeature: function (feature, layer) {
-                            layer.bindPopup(`<strong>Zone: ${zone.label}</strong>`);
+                            return { fillOpacity: 0.08, color: zone.color, weight: 2.5 };
                         }
                     }).addTo(isochroneLayer);
                 }
             } catch (e) {}
         }
 
-        function renderMockSchoolCatchments(center) {
-            const schools = [
-                { 
-                    name: "McDowall State School", 
-                    type: "Primary (Prep - Year 6)",
-                    enrolmentCapacity: "1,044 students",
-                    offsetLat: 0.004, 
-                    offsetLng: -0.005, 
-                    radius: 1100 
-                },
-                { 
-                    name: "Craigslea State High School", 
-                    type: "Secondary (Years 7 - 12)",
-                    enrolmentCapacity: "1,200+ students",
-                    offsetLat: -0.008, 
-                    offsetLng: 0.012, 
-                    radius: 1400 
-                },
-                { 
-                    name: "Aspley State School", 
-                    type: "Primary (Prep - Year 6)",
-                    enrolmentCapacity: "Community Focused",
-                    offsetLat: 0.012, 
-                    offsetLng: 0.008, 
-                    radius: 1200 
-                }
-            ];
+        // Proximity Radius Engine (Zero Database Setup)
+        function renderSchoolsInProximityRadius(centerLatLng) {
+            // Check box states
+            const showPublic = document.getElementById('sector-public').checked;
+            const showPrivate = document.getElementById('sector-private').checked;
+            const showCatholic = document.getElementById('sector-catholic').checked;
 
-            schools.forEach(sch => {
-                const schoolLatLng = [center.lat + sch.offsetLat, center.lng + sch.offsetLng];
-
-                // 1. Draw the catchment ring
-                const catchmentRing = L.circle(schoolLatLng, {
-                    color: '#0284c7',
-                    fillColor: '#0ea5e9',
-                    fillOpacity: 0.06,
-                    weight: 1.5,
-                    dashArray: '3, 5',
-                    radius: sch.radius
-                }).addTo(overlayLayers);
-
-                // 2. Bind a comprehensive details popup
-                catchmentRing.bindPopup(`
-                    <div style="font-family: sans-serif; line-height: 1.4; min-width: 180px;">
-                        <h4 style="margin: 0 0 4px; color: #0369a1;">${sch.name}</h4>
-                        <p style="margin: 0; font-size: 0.8rem; color: #475569;"><strong>Type:</strong> ${sch.type}</p>
-                        <p style="margin: 4px 0 0; font-size: 0.8rem; color: #475569;"><strong>Status:</strong> Enrolment Managed</p>
-                        <p style="margin: 2px 0 0; font-size: 0.75rem; color: #64748b;">Capacity: ${sch.enrolmentCapacity}</p>
-                    </div>
-                `);
-
-                // 3. Add a permanent text label directly on the map
-                catchmentRing.bindTooltip(sch.name, {
-                    permanent: true,
-                    direction: 'center',
-                    className: 'school-map-label'
-                }).openTooltip();
-            });
-        }
-
-        function renderMockParishBoundaries(center) {
-            const parishPoints = [
-                [center.lat + 0.015, center.lng - 0.015],
-                [center.lat + 0.015, center.lng + 0.015],
-                [center.lat - 0.015, center.lng + 0.015],
-                [center.lat - 0.015, center.lng - 0.015]
-            ];
-            
-            L.polygon(parishPoints, {
-                color: '#7c3aed',
-                fillColor: '#7c3aed',
+            // Draw visual range radius circle around the selected home
+            L.circle(centerLatLng, {
+                color: '#2563eb',
+                fillColor: '#3b82f6',
                 fillOpacity: 0.03,
                 weight: 1.5,
-                dashArray: '5, 5'
-            }).addTo(overlayLayers).bindPopup(`<strong>Parish of Kedron Boundary</strong>`);
+                dashArray: '4, 6',
+                radius: currentSearchRadiusMeters
+            }).addTo(schoolLayerGroup);
+
+            // Filter database down to active ranges & categories
+            BRISBANE_SCHOOLS_DATABASE.forEach(sch => {
+                const schLatLng = L.latLng(sch.lat, sch.lng);
+                const distanceMeters = centerLatLng.distanceTo(schLatLng);
+
+                // Filter boundaries
+                if (distanceMeters <= currentSearchRadiusMeters) {
+                    if ((sch.sector === 'public' && showPublic) || 
+                        (sch.sector === 'private' && showPrivate) || 
+                        (sch.sector === 'catholic' && showCatholic)) {
+
+                        const markerType = `school_${sch.sector}`;
+                        const pin = L.marker(schLatLng, { icon: createCustomIcon(markerType) }).addTo(schoolLayerGroup);
+                        
+                        const distanceKm = (distanceMeters / 1000).toFixed(2);
+                        const displaySector = sch.sector.charAt(0).toUpperCase() + sch.sector.slice(1);
+
+                        // Card Popup Details
+                        pin.bindPopup(`
+                            <div style="font-family: sans-serif; line-height: 1.4;">
+                                <h4 style="margin: 0 0 2px; color: #1e40af;">${sch.name}</h4>
+                                <span class="school-tag school-tag-${sch.sector}">${displaySector}</span>
+                                <p style="margin: 6px 0 0; font-size: 0.8rem; color: #475569;"><strong>Range:</strong> ${sch.level}</p>
+                                <p style="margin: 2px 0 0; font-size: 0.8rem; color: #16a34a; font-weight: 700;">Distance: ${distanceKm} km</p>
+                            </div>
+                        `);
+
+                        // Draw Permanent Map Label
+                        pin.bindTooltip(`${sch.name} (${distanceKm}km)`, {
+                            permanent: true,
+                            direction: 'top',
+                            className: 'school-map-label'
+                        }).openTooltip();
+                    }
+                }
+            });
         }
 
         function updateLegendUI() {
@@ -531,12 +537,11 @@
                     div.innerHTML += `<div class="legend-item"><div style="width:12px; height:12px; border-radius:50%; background:${z.color}; opacity:0.6; display:inline-block;"></div><span>${z.label}</span></div>`;
                 });
                 
-                if (document.getElementById('layer-catchments').checked) {
-                    div.innerHTML += `<div class="legend-item"><div style="width:16px; height:10px; border:1px dashed #0284c7; background:#0ea5e9; opacity:0.1;"></div><span>School Catchments</span></div>`;
-                }
-                if (document.getElementById('layer-parishes').checked) {
-                    div.innerHTML += `<div class="legend-item"><div style="width:16px; height:10px; border:1.5px dashed #7c3aed; background:#7c3aed; opacity:0.05;"></div><span>Parish Boundaries</span></div>`;
-                }
+                div.innerHTML += `<div class="legend-title" style="margin-top: 8px;">Sectors Covered</div>`;
+                div.innerHTML += `<div class="legend-item"><div style="width:10px; height:10px; background:#22c55e; border-radius:50%;"></div><span>State/Public</span></div>`;
+                div.innerHTML += `<div class="legend-item"><div style="width:10px; height:10px; background:#3b82f6; border-radius:50%;"></div><span>Private/Indep</span></div>`;
+                div.innerHTML += `<div class="legend-item"><div style="width:10px; height:10px; background:#eab308; border-radius:50%;"></div><span>Catholic</span></div>`;
+                
                 return div;
             };
             legendControl.addTo(map);
@@ -545,6 +550,7 @@
         async function runPropertyMatrixEvaluations(prop) {
             const pLatLng = prop.marker.getLatLng();
             
+            // 1. Commute Calculations
             if (anchors.work) {
                 const wLatLng = anchors.work.marker.getLatLng();
                 const url = `https://api.openrouteservice.org/v2/directions/driving-car?start=${pLatLng.lng},${pLatLng.lat}&end=${wLatLng.lng},${wLatLng.lat}`;
@@ -556,19 +562,45 @@
                         prop.metrics.workClear = `${clearMins}m`;
                         prop.metrics.workPeak = `${Math.round(clearMins * 1.45)}m`;
                     }
-                } catch(e) { }
+                } catch(e) {}
             }
 
-            let infraStrings = [];
-            for (let key in anchors) {
-                if (key !== 'work' && anchors[key]) {
-                    const aLatLng = anchors[key].marker.getLatLng();
-                    const distKm = (pLatLng.distanceTo(aLatLng) / 1000).toFixed(1);
-                    const label = key === 'school-1' ? '🏫 School' : key === 'hospital-1' ? '🏥 Hosp' : '🛒 Retail';
-                    infraStrings.push(`${label}: <strong>${distKm}km</strong>`);
+            // 2. Proximity Schools Evaluation (Dynamic to search settings)
+            const showPublic = document.getElementById('sector-public').checked;
+            const showPrivate = document.getElementById('sector-private').checked;
+            const showCatholic = document.getElementById('sector-catholic').checked;
+
+            let matchedSchoolsList = [];
+
+            BRISBANE_SCHOOLS_DATABASE.forEach(sch => {
+                const schLatLng = L.latLng(sch.lat, sch.lng);
+                const distanceMeters = pLatLng.distanceTo(schLatLng);
+
+                if (distanceMeters <= currentSearchRadiusMeters) {
+                    if ((sch.sector === 'public' && showPublic) || 
+                        (sch.sector === 'private' && showPrivate) || 
+                        (sch.sector === 'catholic' && showCatholic)) {
+                        
+                        const distanceKm = (distanceMeters / 1000).toFixed(1);
+                        matchedSchoolsList.push({
+                            name: sch.name,
+                            km: parseFloat(distanceKm),
+                            sector: sch.sector
+                        });
+                    }
                 }
+            });
+
+            // Sort closest first
+            matchedSchoolsList.sort((a, b) => a.km - b.km);
+
+            if (matchedSchoolsList.length > 0) {
+                prop.metrics.localInfra = matchedSchoolsList.slice(0, 3).map(s => {
+                    return `• ${s.name} (<strong style="color:#1d4ed8;">${s.km}km</strong>) <span class="school-tag school-tag-${s.sector}">${s.sector}</span>`;
+                }).join('<br>');
+            } else {
+                prop.metrics.localInfra = `<span style="color:#94a3b8; font-style:italic;">No schools inside ${currentSearchRadiusMeters/1000}km</span>`;
             }
-            prop.metrics.localInfra = infraStrings.length > 0 ? infraStrings.join('<br>') : 'No anchors set';
             
             rebuildPayloadMatrixUI();
             if (selectedHouseId === prop.id) {
@@ -628,7 +660,7 @@
                             <span class="badge badge-off">Clear: ${p.metrics.workClear}</span><br>
                             <span class="badge badge-peak">Peak: ${p.metrics.workPeak}</span>
                         </td>
-                        <td style="line-height:1.3; font-size:0.72rem;">${p.metrics.localInfra}</td>
+                        <td style="line-height:1.4; font-size:0.7rem;">${p.metrics.localInfra}</td>
                     </tr>
                 `;
             });
@@ -677,7 +709,7 @@
 
         function clearCompleteCanvas() {
             liveRoutesLayer.clearLayers();
-            overlayLayers.clearLayers();
+            schoolLayerGroup.clearLayers();
             isochroneLayer.clearLayers();
             properties.forEach(p => map.removeLayer(p.marker));
             properties = [];
@@ -690,8 +722,12 @@
                 const btn = document.getElementById(`slot-${key}`);
                 if(btn) btn.classList.remove('set', 'active');
             }
-            document.getElementById('layer-catchments').checked = false;
-            document.getElementById('layer-parishes').checked = false;
+            document.getElementById('sector-public').checked = true;
+            document.getElementById('sector-private').checked = true;
+            document.getElementById('sector-catholic').checked = true;
+            document.getElementById('school-proximity-slider').value = 3.0;
+            document.getElementById('radius-value-label').innerText = "3.0 km";
+            currentSearchRadiusMeters = 3000;
             activeSlotType = null;
             isHousePlacementActive = true;
             resetThemeButtons();
