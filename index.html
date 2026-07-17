@@ -36,9 +36,13 @@
         .slot-btn.active { background: #dbeafe; color: #1e40af; border-color: #3b82f6; }
         .slot-btn.set { border-left: 4px solid #16a34a; }
 
-        .tool-deck { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
-        .tool-btn { background: #f8fafc; color: #475569; border: 1px dashed #cbd5e1; padding: 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
-        .tool-btn.active { background: #fef08a; color: #854d0e; border-color: #eab308; border-style: solid; }
+        .theme-deck { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 6px; }
+        .theme-btn { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+        .theme-btn.active { background: #1e293b; color: white; border-color: #0f172a; }
+
+        .checkbox-group { display: flex; flex-direction: column; gap: 6px; padding: 6px 0; }
+        .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+        .checkbox-item input { width: auto; }
 
         input, select, button { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; }
         button.primary { background: #2563eb; color: white; font-weight: 600; border: none; cursor: pointer; }
@@ -53,13 +57,9 @@
         .badge-peak { background: #fee2e2; color: #991b1b; }
         .badge-off { background: #dcfce7; color: #166534; }
 
-        .checkbox-group { display: flex; flex-direction: column; gap: 6px; padding: 6px 0; }
-        .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
-        .checkbox-item input { width: auto; }
-
         #map { flex: 1; width: 100%; z-index: 1; }
         
-        .map-legend { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); line-height: 1.5; font-size: 0.8rem; min-width: 160px; z-index: 1000; }
+        .map-legend { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); line-height: 1.5; font-size: 0.8rem; min-width: 160px; z-index: 1000; color: #334155; }
         .legend-title { font-weight: 700; margin-bottom: 4px; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px; }
         .legend-item { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
 
@@ -82,6 +82,13 @@
         </div>
 
         <div id="sidebar" class="sidebar">
+            <div class="section-title">Map Display Mode</div>
+            <div class="theme-deck">
+                <button id="theme-street" class="theme-btn active" onclick="switchMapStyle('street')">🗺️ Street</button>
+                <button id="theme-dark" class="theme-btn" onclick="switchMapStyle('dark')">🕶️ Dark</button>
+                <button id="theme-satellite" class="theme-btn" onclick="switchMapStyle('satellite')">🛰️ Satellite</button>
+            </div>
+
             <div class="section-title">1. Search From Dynamic Pin</div>
             <div class="form-group" style="margin-top:6px; display:flex; gap:6px;">
                 <input type="text" id="target-city" placeholder="Center Map: e.g. McDowall, QLD" value="McDowall, QLD">
@@ -96,13 +103,7 @@
                 <button id="slot-amenity-1" class="slot-btn" onclick="activateSlot('amenity-1')">🛒 Anchor Retail</button>
             </div>
 
-            <div class="section-title">3. Canvas Measurement Tools</div>
-            <div class="tool-deck">
-                <button id="tool-distance" class="tool-btn" onclick="activateMeasurementTool('distance')">📏 Multi-Stop Dist</button>
-                <button id="tool-area" class="tool-btn" onclick="activateMeasurementTool('area')">📐 Area Estimate</button>
-            </div>
-
-            <div class="section-title">4. Pin-Based Smart Overlays</div>
+            <div class="section-title">3. Dynamic Map Overlays</div>
             <div class="form-group" style="margin-top:6px;">
                 <label style="font-size:0.75rem; font-weight:700; color:#475569;">Search Radius from Active House Pin:</label>
                 <div style="display:flex; gap:6px; margin-bottom:4px; align-items:center;">
@@ -113,8 +114,12 @@
                 
                 <div class="checkbox-group" style="border-top:1px solid #f1f5f9; padding-top:8px;">
                     <div class="checkbox-item">
+                        <input type="checkbox" id="layer-isochrones" onchange="toggleIsochroneAreas()" checked>
+                        <label for="layer-isochrones" style="color:#d97706; font-weight:600;">⏱️ Drive Time Zones (10/20/30m)</label>
+                    </div>
+                    <div class="checkbox-item">
                         <input type="checkbox" id="layer-catchments" onchange="toggleCatchmentOverlays()">
-                        <label for="layer-catchments" style="color:#0369a1; font-weight:600;">🎒 Catchment Areas (Local)</label>
+                        <label for="layer-catchments" style="color:#0369a1; font-weight:600;">🎒 School Catchments (Local)</label>
                     </div>
                     <div class="checkbox-item">
                         <input type="checkbox" id="layer-parishes" onchange="toggleParishOverlays()">
@@ -123,7 +128,7 @@
                 </div>
             </div>
 
-            <div class="section-title">5. Track Houses & Live Commutes</div>
+            <div class="section-title">4. Track Houses & Commutes</div>
             <button id="house-trigger-btn" class="primary" style="background:#0f172a; margin-top:6px;" onclick="activateHousePlacementMode()">+ Drop Prospective House Pin</button>
             
             <div class="matrix-box">
@@ -154,23 +159,35 @@
         // OpenRouteService developer token
         const apiKey = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjhhNmEwODBlYTcwNTRkMWM5MDk4ZmJiNjg2MDFkZjgxIiwiaCI6Im11cm11cjY0In0=';
 
-        const map = L.map('map').setView([-27.3826, 152.9922], 13); // Centered on McDowall, QLD
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+        // Base Map Layer Sources
+        const baseLayers = {
+            street: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }),
+            dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© CartoDB'
+            }),
+            satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '© Esri'
+            })
+        };
+
+        const map = L.map('map', {
+            layers: [baseLayers.street]
+        }).setView([-27.3826, 152.9922], 13); // Centered on McDowall, QLD
 
         let boundaryLayers = L.layerGroup().addTo(map);
         let liveRoutesLayer = L.layerGroup().addTo(map);
-        let measurementLayer = L.layerGroup().addTo(map);
         let overlayLayers = L.layerGroup().addTo(map);
+        let isochroneLayer = L.layerGroup().addTo(map);
         let legendControl = null;
         
         let activeSlotType = null;
         let isHousePlacementActive = false;
-        let activeMeasurementMode = null; 
         
         let anchors = { work: null, 'school-1': null, 'hospital-1': null, 'amenity-1': null };
         let properties = [];
         let activeBoundariesData = [];
-        let measurementPoints = [];
         let selectedHouseId = null;
 
         const iconUrls = {
@@ -182,8 +199,8 @@
         };
 
         const routeColors = {
-            work: '#0f172a',      // Black
-            'school-1': '#4b5563',  // Grey
+            work: '#dc2626',      // Red for critical Work path
+            'school-1': '#2563eb',  // Blue for School
             'hospital-1': '#7c3aed',// Violet
             'amenity-1': '#ea580c'  // Orange
         };
@@ -194,6 +211,16 @@
                 shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
                 iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
             });
+        }
+
+        function switchMapStyle(style) {
+            document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`theme-${style}`).classList.add('active');
+            
+            for (let key in baseLayers) {
+                map.removeLayer(baseLayers[key]);
+            }
+            baseLayers[style].addTo(map);
         }
 
         function toggleMobileSidebar() {
@@ -216,8 +243,6 @@
 
         function activateSlot(type) {
             isHousePlacementActive = false;
-            activeMeasurementMode = null;
-            resetToolButtons();
             document.getElementById('house-trigger-btn').style.background = '#0f172a';
             document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('active'));
             
@@ -232,8 +257,6 @@
 
         function activateHousePlacementMode() {
             activeSlotType = null;
-            activeMeasurementMode = null;
-            resetToolButtons();
             document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('active'));
             isHousePlacementActive = !isHousePlacementActive;
             const btn = document.getElementById('house-trigger-btn');
@@ -241,32 +264,7 @@
             if (isHousePlacementActive && window.innerWidth < 768) toggleMobileSidebar();
         }
 
-        function activateMeasurementTool(mode) {
-            activeSlotType = null;
-            isHousePlacementActive = false;
-            document.getElementById('house-trigger-btn').style.background = '#0f172a';
-            document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('active'));
-            
-            if (activeMeasurementMode === mode) {
-                activeMeasurementMode = null;
-                resetToolButtons();
-                measurementLayer.clearLayers();
-                measurementPoints = [];
-            } else {
-                activeMeasurementMode = mode;
-                resetToolButtons();
-                document.getElementById(`tool-${mode}`).classList.add('active');
-                measurementLayer.clearLayers();
-                measurementPoints = [];
-                if (window.innerWidth < 768) toggleMobileSidebar();
-            }
-        }
-
-        function resetToolButtons() {
-            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-        }
-
-        // DYNAMIC PIN SEARCH AREA GENERATION
+        // GENERATES THE RADIUS BOUNDARY AROUND HOUSE PIN
         function generateSearchBoundary() {
             boundaryLayers.clearLayers();
             activeBoundariesData = [];
@@ -280,26 +278,74 @@
             const latlng = activeHouse.marker.getLatLng();
             const val = parseFloat(document.getElementById('boundary-val').value);
 
-            // Create physical dynamic boundary ring around the active house
             L.circle(latlng, { 
-                color: '#2563eb', 
+                color: '#3b82f6', 
                 fillColor: '#3b82f6', 
-                fillOpacity: 0.04, 
-                weight: 2,
-                dashArray: '4, 4',
+                fillOpacity: 0.03, 
+                weight: 1.5,
+                dashArray: '5, 5',
                 radius: val * 1000 
             }).addTo(boundaryLayers);
 
-            activeBoundariesData.push({ label: `${val}km Search Radius`, color: '#2563eb' });
+            activeBoundariesData.push({ label: `${val}km Physical Ring`, color: '#3b82f6' });
             updateLegendUI();
 
-            // Run localized dynamic catchment / boundary fetch instantly inside the radius
+            // Fire both layers (boundary shapes + drive times) for the active house
             triggerSmartOverlayUpdates(latlng, val);
+            calculateDriveTimeZones(latlng);
             
             if (window.innerWidth < 768) toggleMobileSidebar();
         }
 
-        // TRIGGER ON-DEMAND API FETCH (LAG-FREE METHODOLOGY)
+        // CALCULATE 10, 20, AND 30-MINUTE DRIVE TIME ISOCHRONES
+        async function calculateDriveTimeZones(latlng) {
+            isochroneLayer.clearLayers();
+            if (!document.getElementById('layer-isochrones').checked) return;
+
+            const url = 'https://api.openrouteservice.org/v2/isochrones/driving-car';
+            const body = {
+                locations: [[latlng.lng, latlng.lat]],
+                range: [600, 1200, 1800], // 10, 20, 30 minutes in seconds
+                range_type: 'time',
+                smoothing: 5
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': apiKey
+                    },
+                    body: JSON.stringify(body)
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Render layers in descending order so smaller zones stack cleanly on top of larger ones
+                    const colors = { 1800: '#ef4444', 1200: '#f59e0b', 600: '#10b981' };
+                    const labels = { 1800: '30-Min Drive', 1200: '20-Min Drive', 600: '10-Min Drive' };
+                    
+                    L.geoJSON(data, {
+                        style: function (feature) {
+                            const range = feature.properties.value;
+                            return {
+                                fillOpacity: 0.06,
+                                color: colors[range],
+                                weight: 2,
+                                fillStyle: 'solid'
+                            };
+                        },
+                        onEachFeature: function (feature, layer) {
+                            const range = feature.properties.value;
+                            layer.bindPopup(`<strong>${labels[range]} Limit</strong>`);
+                        }
+                    }).addTo(isochroneLayer);
+                }
+            } catch (e) {}
+        }
+
+        // FETCH LOCALIZED CATCHMENTS/PARISHES IN THE ACTIVE VISUAL WINDOW
         function triggerSmartOverlayUpdates(centerLatLng, radiusKm) {
             overlayLayers.clearLayers();
             
@@ -308,10 +354,8 @@
 
             if (!showCatchments && !showParishes) return;
 
-            // Generate spatial bounding coordinates representing only the active circle
             const boundingBox = getBoundingBox(centerLatLng.lat, centerLatLng.lng, radiusKm);
 
-            // Fetch dynamic OpenStreetMap infrastructure features matching bounds safely and rapidly
             let queryQueries = [];
             if (showCatchments) {
                 queryQueries.push(`node["amenity"="school"](${boundingBox});way["amenity"="school"](${boundingBox});`);
@@ -330,23 +374,20 @@
                 .then(data => {
                     if (data.elements) {
                         data.elements.forEach(element => {
-                            // If parish boundary relation
                             if (element.type === 'relation' && element.tags.boundary === 'administrative') {
                                 renderGeoPolyline(element, '#7c3aed', `Parish: ${element.tags.name || 'Historical District'}`);
                             }
-                            // If school catchment representation (Point & dynamic spatial bubble)
                             else if (element.tags.amenity === 'school') {
                                 const lat = element.lat || (element.geometry && element.geometry[0].lat);
                                 const lon = element.lon || (element.geometry && element.geometry[0].lon);
                                 if (lat && lon) {
-                                    // Generate lightweight catchment bubble approximation dynamically around school nodes
                                     L.circle([lat, lon], {
                                         color: '#0284c7',
                                         fillColor: '#0ea5e9',
                                         fillOpacity: 0.1,
                                         weight: 1,
-                                        radius: 1200 // Default 1.2km local walking catchment representation
-                                    }).addTo(overlayLayers).bindPopup(`<strong>${element.tags.name || 'School'} Catchment Zone</strong>`);
+                                        radius: 1200 // Mock 1.2km local catchment boundaries around school nodes
+                                    }).addTo(overlayLayers).bindPopup(`<strong>${element.tags.name || 'School'} Catchment</strong>`);
                                 }
                             }
                         });
@@ -372,12 +413,16 @@
             }
         }
 
-        function toggleCatchmentOverlays() {
-            updateSearchOverlayTriggers();
-        }
-
-        function toggleParishOverlays() {
-            updateSearchOverlayTriggers();
+        function toggleCatchmentOverlays() { updateSearchOverlayTriggers(); }
+        function toggleParishOverlays() { updateSearchOverlayTriggers(); }
+        
+        function toggleIsochroneAreas() {
+            const activeHouse = properties.find(p => p.id === selectedHouseId);
+            if (activeHouse) {
+                calculateDriveTimeZones(activeHouse.marker.getLatLng());
+            } else {
+                isochroneLayer.clearLayers();
+            }
         }
 
         function updateSearchOverlayTriggers() {
@@ -398,21 +443,27 @@
                 activeBoundariesData.forEach(b => {
                     div.innerHTML += `<div class="legend-item"><div style="width:16px; height:10px; border:2px dashed ${b.color}; background:${b.color}; opacity:0.1;"></div><span>${b.label}</span></div>`;
                 });
+                if (document.getElementById('layer-isochrones').checked) {
+                    div.innerHTML += `<div class="legend-item"><div style="width:12px; height:12px; border-radius:50%; background:#10b981; opacity:0.6; display:inline-block;"></div><span>10m Drive Time</span></div>`;
+                    div.innerHTML += `<div class="legend-item"><div style="width:12px; height:12px; border-radius:50%; background:#f59e0b; opacity:0.6; display:inline-block;"></div><span>20m Drive Time</span></div>`;
+                    div.innerHTML += `<div class="legend-item"><div style="width:12px; height:12px; border-radius:50%; background:#ef4444; opacity:0.6; display:inline-block;"></div><span>30m Drive Time</span></div>`;
+                }
                 if (document.getElementById('layer-catchments').checked) {
-                    div.innerHTML += `<div class="legend-item"><div style="width:16px; height:10px; border:1px solid #0284c7; background:#0ea5e9; opacity:0.1;"></div><span>Local School Catchment</span></div>`;
+                    div.innerHTML += `<div class="legend-item"><div style="width:16px; height:10px; border:1px solid #0284c7; background:#0ea5e9; opacity:0.1;"></div><span>School Catchment</span></div>`;
                 }
                 if (document.getElementById('layer-parishes').checked) {
-                    div.innerHTML += `<div class="legend-item"><div style="width:16px; height:10px; border:1px solid #7c3aed; background:#7c3aed; opacity:0.1;"></div><span>Parish Boundaries</span></div>`;
+                    div.innerHTML += `<div class="legend-item"><div style="width:16px; height:10px; border:1px solid #7c3aed; background:#7c3aed; opacity:0.1;"></div><span>Parish Boundary</span></div>`;
                 }
                 return div;
             };
             legendControl.addTo(map);
         }
 
+        // EVALUATE MATRIX CALCULATIONS
         async function runPropertyMatrixEvaluations(prop) {
             const pLatLng = prop.marker.getLatLng();
             
-            // Evaluate Work Commute metrics
+            // Calculate real commute duration to Work
             if (anchors.work) {
                 const wLatLng = anchors.work.marker.getLatLng();
                 const url = `https://api.openrouteservice.org/v2/directions/driving-car?start=${pLatLng.lng},${pLatLng.lat}&end=${wLatLng.lng},${wLatLng.lat}`;
@@ -427,7 +478,7 @@
                 } catch(e) { }
             }
 
-            // Evaluate Euclidean distance to all standard local infrastructure slots
+            // Calculate distance parameters to other set anchors
             let infraStrings = [];
             for (let key in anchors) {
                 if (key !== 'work' && anchors[key]) {
@@ -445,7 +496,7 @@
             }
         }
 
-        // Live Dynamic Driving Route Plotter across all active anchors
+        // DRAW INDIVIDUAL DRIVE PATHS TO EACH OF THE ACTIVE ANCHORS
         async function renderLiveDrivingCommutes(prop) {
             liveRoutesLayer.clearLayers();
             const pLatLng = prop.marker.getLatLng();
@@ -464,7 +515,7 @@
                                     color: routeColors[key],
                                     weight: 4,
                                     opacity: 0.8,
-                                    dashArray: key === 'work' ? null : '6, 6'
+                                    dashArray: key === 'work' ? null : '5, 10' // Solid line to work, dashed to other anchors
                                 }
                             }).addTo(liveRoutesLayer);
                         }
@@ -478,8 +529,7 @@
             const targetProp = properties.find(p => p.id === id);
             if (targetProp) {
                 renderLiveDrivingCommutes(targetProp);
-                // Dynamically redraw active overlays for the selected home position
-                generateSearchBoundary();
+                generateSearchBoundary(); // Redraw search boundary & isochrone zones around selected house
             }
             rebuildPayloadMatrixUI();
         }
@@ -507,60 +557,7 @@
         }
 
         function handleCanvasMapTaps(e) {
-            // Context 1: Measurement Suite Operations
-            if (activeMeasurementMode) {
-                measurementPoints.push(e.latlng);
-                
-                L.circleMarker(e.latlng, { radius: 5, color: '#eab308', fillColor: '#fef08a', fillOpacity: 1 }).addTo(measurementLayer);
-                
-                if (activeMeasurementMode === 'distance') {
-                    if (measurementPoints.length > 1) {
-                        let totalDist = 0;
-                        for (let i = 1; i < measurementPoints.length; i++) {
-                            totalDist += measurementPoints[i-1].distanceTo(measurementPoints[i]);
-                        }
-                        L.polyline(measurementPoints, { color: '#eab308', weight: 3 }).addTo(measurementLayer);
-                        
-                        L.popup()
-                            .setLatLng(e.latlng)
-                            .setContent(`<strong>Cumulative Route Distance:</strong><br>${(totalDist / 1000).toFixed(2)} km`)
-                            .openOn(map);
-                    }
-                } else if (activeMeasurementMode === 'area') {
-                    if (measurementPoints.length > 2) {
-                        measurementLayer.eachLayer(layer => {
-                            if (layer instanceof L.Polygon && !(layer instanceof L.CircleMarker)) {
-                                measurementLayer.removeLayer(layer);
-                            }
-                        });
-                        
-                        const poly = L.polygon(measurementPoints, { color: '#eab308', fillColor: '#fef08a', fillOpacity: 0.4 }).addTo(measurementLayer);
-                        
-                        let area = 0;
-                        const numPoints = measurementPoints.length;
-                        if (numPoints > 2) {
-                            for (let i = 0; i < numPoints; i++) {
-                                let p1 = measurementPoints[i];
-                                let p2 = measurementPoints[(i + 1) % numPoints];
-                                area += (p2.lng - p1.lng) * Math.sin(p1.lat * Math.PI / 180);
-                            }
-                            area = Math.abs(area * 6378137 * 6378137 * Math.PI / 180);
-                        }
-                        
-                        const displayArea = area > 1000000 
-                            ? `${(area / 1000000).toFixed(2)} km²` 
-                            : `${Math.round(area).toLocaleString()} m²`;
-
-                        L.popup()
-                            .setLatLng(e.latlng)
-                            .setContent(`<strong>Estimated Survey Enclosure Area:</strong><br>${displayArea}`)
-                            .openOn(map);
-                    }
-                }
-                return;
-            }
-
-            // Context 2: Anchor Placement Operations
+            // Context 1: Anchor Placement
             if (activeSlotType) {
                 if (anchors[activeSlotType]) map.removeLayer(anchors[activeSlotType].marker);
                 
@@ -577,7 +574,7 @@
                 return;
             }
 
-            // Context 3: Prospective House Node Initialization
+            // Context 2: Prospective House Node Initialisation
             if (isHousePlacementActive) {
                 const pin = L.marker(e.latlng, { icon: createCustomIcon('house'), draggable: true }).addTo(map);
                 const newProperty = {
@@ -586,14 +583,14 @@
                 };
                 
                 properties.push(newProperty);
-                selectedHouseId = newProperty.id; // Auto-select to draw live paths immediately
+                selectedHouseId = newProperty.id; 
                 rebuildPayloadMatrixUI();
                 runPropertyMatrixEvaluations(newProperty);
-                generateSearchBoundary(); // Auto draw the circular boundary instantly
+                generateSearchBoundary(); // Auto-generates boundaries and isochrones instantly around the dropped pin
 
                 pin.on('dragend', function() {
                     runPropertyMatrixEvaluations(newProperty);
-                    generateSearchBoundary(); // Recalculate circle on drag drop
+                    generateSearchBoundary(); 
                 });
 
                 activateHousePlacementMode();
@@ -603,12 +600,11 @@
         function clearCompleteCanvas() {
             boundaryLayers.clearLayers();
             liveRoutesLayer.clearLayers();
-            measurementLayer.clearLayers();
             overlayLayers.clearLayers();
+            isochroneLayer.clearLayers();
             properties.forEach(p => map.removeLayer(p.marker));
             properties = [];
             activeBoundariesData = [];
-            measurementPoints = [];
             selectedHouseId = null;
             for (let key in anchors) {
                 if (anchors[key]) {
@@ -618,15 +614,21 @@
                 const btn = document.getElementById(`slot-${key}`);
                 if(btn) btn.classList.remove('set', 'active');
             }
+            document.getElementById('layer-isochrones').checked = true;
             document.getElementById('layer-catchments').checked = false;
             document.getElementById('layer-parishes').checked = false;
             activeSlotType = null;
             isHousePlacementActive = false;
-            activeMeasurementMode = null;
-            resetToolButtons();
+            resetThemeButtons();
+            document.getElementById('theme-street').classList.add('active');
+            switchMapStyle('street');
             document.getElementById('house-trigger-btn').style.background = '#0f172a';
             if (legendControl) map.removeControl(legendControl);
             rebuildPayloadMatrixUI();
+        }
+
+        function resetThemeButtons() {
+            document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
         }
 
         map.on('click', handleCanvasMapTaps);
