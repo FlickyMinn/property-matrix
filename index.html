@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Search Decision Matrix</title>
+    <!-- PWA Web Manifest & iOS wrappers -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Property Matrix">
+    <link rel="apple-touch-icon" href="icon.png">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+        body { display: flex; flex-direction: column; height: 100vh; background: #f8fafc; color: #0f172a; overflow: hidden; }
+        .app-container { display: flex; flex-direction: column; height: 100%; position: relative; }
+        
+        .mobile-header { background: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; z-index: 2000; }
+        .mobile-header h1 { font-size: 1.1rem; font-weight: 700; color: #1e3a8a; }
+        .menu-toggle-btn { background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+
+        .sidebar { 
+            background: white; padding: 16px; z-index: 1999; position: absolute;
+            top: 53px; left: 0; right: 0; display: none; 
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); max-height: calc(100vh - 53px); overflow-y: auto;
+        }
+        .sidebar.show { display: block; }
+
+        .section-title { font-size: 0.85rem; font-weight: 700; color: #1e3a8a; text-transform: uppercase; margin-top: 14px; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; letter-spacing: 0.5px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        
+        /* Anchor Slot Buttons */
+        .anchor-deck { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+        .slot-btn { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .slot-btn:hover { background: #e2e8f0; }
+        .slot-btn.active { background: #dbeafe; color: #1e40af; border-color: #3b82f6; }
+        .slot-btn.set { border-left: 4px solid #16a34a; }
+
+        input, select, button { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; }
+        button.primary { background: #2563eb; color: white; font-weight: 600; border: none; cursor: pointer; }
+        button.primary:hover { background: #1d4ed8; }
+        
+        .matrix-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; margin-top: 10px; }
+        .matrix-table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 0.78rem; }
+        .matrix-table th, .matrix-table td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; vertical-align: top; }
+        .matrix-table th { background: #f1f5f9; font-weight: 700; color: #475569; }
+        .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 700; margin-top: 2px; }
+        .badge-peak { background: #fee2e2; color: #991b1b; }
+        .badge-off { background: #dcfce7; color: #166534; }
+
+        .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; margin-top: 4px; }
+        .checkbox-item input { width: auto; }
+
+        #map { flex: 1; width: 100%; z-index: 1; }
+        
+        @media (min-width: 768px) {
+            .mobile-header { display: none; }
+            .app-container { flex-direction: row; }
+            .sidebar { 
+                display: flex !important; position: relative; width: 380px; height: 100%; top: 0;
+                box-shadow: none; border-right: 1px solid #e2e8f0; flex-direction: column; gap: 12px; 
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="mobile-header">
+            <h1>Property Matrix</h1>
+            <button class="menu-toggle-btn" onclick="toggleMobileSidebar()">Menu</button>
+        </div>
+
+        <div id="sidebar" class="sidebar">
+            <div class="section-title">1. Infrastructure Anchors</div>
+            <p style="font-size:0.75rem; color:#64748b; margin-bottom:4px;">Select a slot, then tap the map grid to set its location permanent.</p>
+            <div class="anchor-deck">
+                <button id="slot-work" class="slot-btn" onclick="activateSlot('work')">💼 Work Anchor</button>
+                <button id="slot-school-1" class="slot-btn" onclick="activateSlot('school-1')">🏫 School Anchor</button>
+                <button id="slot-hospital-1" class="slot-btn" onclick="activateSlot('hospital-1')">🏥 Hospital Anchor</button>
+                <button id="slot-amenity-1" class="slot-btn" onclick="activateSlot('amenity-1')">🛒 Retail/Park</button>
+            </div>
+
+            <div class="section-title">2. Search Boundary Filters</div>
+            <div class="form-group" style="margin-top:6px;">
+                <select id="boundary-mode">
+                    <option value="distance">Distance Radius (km)</option>
+                    <option value="time-traffic">Drive Time (Heavy Traffic)</option>
+                    <option value="time-clear">Drive Time (Clear Run)</option>
+                </select>
+                <div style="display:flex; gap:6px;">
+                    <input type="number" id="boundary-val" value="15" min="1">
+                    <button class="primary" onclick="generateSearchBoundary()" style="width:120px;">Overlay</button>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="layer-catchment-high" onchange="toggleCatchmentWMS()">
+                    <label for="layer-catchment-high">State High School Catchments</label>
+                </div>
+            </div>
+
+            <div class="section-title">3. Prospective Houses</div>
+            <button id="house-trigger-btn" class="primary" style="background:#0f172a; margin-top:6px;" onclick="activateHousePlacementMode()">+ Drop Prospective House Pin</button>
+            
+            <div class="matrix-box">
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Work Commute</th>
+                            <th>Local Anchors</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matrix-payload">
+                        <tr>
+                            <td colspan="3" style="text-align:center; color:#64748b; padding:12px;">No targets tracked yet.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <button onclick="clearCompleteCanvas()" style="background:#64748b; color:white; border:none; margin-top:auto; padding:10px; border-radius:8px; cursor:pointer;">Reset Framework</button>
+        </div>
+
+        <div id="map"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const apiKey = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjhhNmEwODBlYTcwNTRkMWM5MDk4ZmJiNjg2MDFkZjgxIiwiaCI6Im11cm11cjY0In0=';
+
+        const map = L.map('map').setView([-27.4701, 153.0213], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+
+        let boundaryLayers = L.layerGroup().addTo(map);
+        let catchmentLayers = L.layerGroup().addTo(map);
+        
+        // State Engine Architecture
+        let activeSlotType = null;
+        let isHousePlacementActive = false;
+        
+        let anchors = { work: null, 'school-1': null, 'hospital-1': null, 'amenity-1': null };
+        let properties = [];
+
+        // Pin Custom Styling Asset Dictionaries
+        const iconUrls = {
+            work: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-black.png',
+            'school-1': 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-gold.png',
+            'hospital-1': 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png',
+            'amenity-1': 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+            house: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png'
+        };
+
+        function createCustomIcon(type) {
+            return L.icon({
+                iconUrl: iconUrls[type],
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+            });
+        }
+
+        function toggleMobileSidebar() {
+            document.getElementById('sidebar').classList.toggle('show');
+        }
+
+        function activateSlot(type) {
+            isHousePlacementActive = false;
+            document.getElementById('house-trigger-btn').style.background = '#0f172a';
+            
+            // Clean out old selection active highlights
+            document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('active'));
+            
+            if (activeSlotType === type) {
+                activeSlotType = null;
+            } else {
+                activeSlotType = type;
+                document.getElementById(`slot-${type}`).classList.add('active');
+                if (window.innerWidth < 768) toggleMobileSidebar();
+            }
+        }
+
+        function activateHousePlacementMode() {
+            activeSlotType = null;
+            document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('active'));
+            
+            isHousePlacementActive = !isHousePlacementActive;
+            const btn = document.getElementById('house-trigger-btn');
+            if (isHousePlacementActive) {
+                btn.style.background = '#16a34a';
+                if (window.innerWidth < 768) toggleMobileSidebar();
+            } else {
+                btn.style.background = '#0f172a';
+            }
+        }
+
+        function toggleCatchmentWMS() {
+            catchmentLayers.clearLayers();
+            if (document.getElementById('layer-catchment-high').checked) {
+                L.tileLayer.wms("https://spatial-gis.information.qld.gov.au/arcgis/services/Society/SchoolsAndSchoolCatchments/MapServer/WMSServer", {
+                    layers: '2', format: 'image/png', transparent: true, opacity: 0.35
+                }).addTo(catchmentLayers);
+            }
+        }
+
+        async function generateSearchBoundary() {
+            if (!anchors.work) return alert("Please set your Work Anchor location pin first.");
+            
+            const mode = document.getElementById('boundary-mode').value;
+            let val = parseFloat(document.getElementById('boundary-val').value);
+            const latlng = anchors.work.marker.getLatLng();
+
+            if (mode === 'distance') {
+                L.circle(latlng, { color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.08, radius: val * 1000 }).addTo(boundaryLayers);
+            } else {
+                let minutes = mode === 'time-traffic' ? val * 0.65 : val;
+                const seconds = Math.round(minutes * 60);
+                try {
+                    const response = await fetch(`https://api.openrouteservice.org/v2/isochrones/driving-car`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': apiKey },
+                        body: JSON.stringify({ locations: [[latlng.lng, latlng.lat]], range: [seconds], range_type: 'time' })
+                    });
+                    const geojson = await response.json();
+                    L.geoJSON(geojson, { style: { color: '#ea580c', fillColor: '#fb923c', fillOpacity: 0.08, weight: 3 } }).addTo(boundaryLayers);
+                } catch (e) { alert("Boundary limits failed calculation."); }
+            }
+            if (window.innerWidth < 768) toggleMobileSidebar();
+        }
+
+        // Deep Matrix Processing for Route Network Analytics
+        async function runPropertyMatrixEvaluations(prop) {
+            const pLatLng = prop.marker.getLatLng();
+            
+            // 1. Core Workplace Commute Metrics
+            if (anchors.work) {
+                const wLatLng = anchors.work.marker.getLatLng();
+                const url = `https://api.openrouteservice.org/v2/directions/driving-car?start=${pLatLng.lng},${pLatLng.lat}&end=${wLatLng.lng},${wLatLng.lat}`;
+                try {
+                    const res = await fetch(url, { headers: { 'Authorization': apiKey } });
+                    if (res.ok) {
+                        const data = await res.json();
+                        const clearMins = Math.round(data.features[0].properties.summary.duration / 60);
+                        prop.metrics.workClear = `${clearMins}m`;
+                        prop.metrics.workPeak = `${Math.round(clearMins * 1.45)}m`;
+                    }
+                } catch(e) { }
+            }
+
+            // 2. Proximity Infrastructure Closest Distances Engine
+            let infraStrings = [];
+            for (let key in anchors) {
+                if (key !== 'work' && anchors[key]) {
+                    const aLatLng = anchors[key].marker.getLatLng();
+                    const distKm = (pLatLng.distanceTo(aLatLng) / 1000).toFixed(1);
+                    const label = key === 'school-1' ? '🏫 School' : key === 'hospital-1' ? '🏥 Hosp' : '🛒 Retail';
+                    infraStrings.push(`${label}: <strong>${distKm}km</strong>`);
+                }
+            }
+            prop.metrics.localInfra = infraStrings.length > 0 ? infraStrings.join('<br>') : 'No anchors set';
+            
+            rebuildPayloadMatrixUI();
+        }
+
+        async function fetchPropertySchoolCatchment(prop, index) {
+            const pLatLng = prop.marker.getLatLng();
+            const url = `https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Society/SchoolsAndSchoolCatchments/MapServer/1/query?geometry=${pLatLng.lng},${pLatLng.lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&outFields=centre_name&f=json`;
+            try {
+                const res = await fetch(url);
+                if (res.ok) {
+                    const data = await res.json();
+                    if(data.features && data.features.length > 0) {
+                        prop.metrics.catchment = data.features[0].attributes.centre_name;
+                    }
+                }
+            } catch(e){}
+            rebuildPayloadMatrixUI();
+        }
+
+        function rebuildPayloadMatrixUI() {
+            const body = document.getElementById('matrix-payload');
+            if (properties.length === 0) {
+                body.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#64748b; padding:12px;">No targets tracked yet.</td></tr>`;
+                return;
+            }
+            body.innerHTML = "";
+            properties.forEach((p, idx) => {
+                body.innerHTML += `
+                    <tr>
+                        <td><strong>House #${idx+1}</strong><br><span style="font-size:0.65rem; color:#64748b;">Zone: ${p.metrics.catchment}</span></td>
+                        <td>
+                            <span class="badge badge-off">Clear: ${p.metrics.workClear}</span><br>
+                            <span class="badge badge-peak">Peak: ${p.metrics.workPeak}</span>
+                        </td>
+                        <td style="line-height:1.3;">${p.metrics.localInfra}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function handleCanvasMapTaps(e) {
+            // Context Variant A: Setting Role Base Infrastructure Anchor Points
+            if (activeSlotType) {
+                if (anchors[activeSlotType]) {
+                    map.removeLayer(anchors[activeSlotType].marker);
+                }
+                
+                const pin = L.marker(e.latlng, { icon: createCustomIcon(activeSlotType), draggable: true }).addTo(map);
+                anchors[activeSlotType] = { marker: pin, latlng: e.latlng };
+                
+                const targetBtn = document.getElementById(`slot-${activeSlotType}`);
+                targetBtn.classList.add('set');
+                
+                pin.on('dragend', function() {
+                    properties.forEach(p => runPropertyMatrixEvaluations(p));
+                });
+
+                activateSlot(activeSlotType); // Close state out cleanly
+                properties.forEach(p => runPropertyMatrixEvaluations(p)); // Refresh calculations
+                return;
+            }
+
+            // Context Variant B: Placing Prospective House Targets
+            if (isHousePlacementActive) {
+                const propId = Date.now();
+                const pin = L.marker(e.latlng, { icon: createCustomIcon('house'), draggable: true }).addTo(map);
+                
+                const newProperty = {
+                    id: propId,
+                    marker: pin,
+                    metrics: { workClear: '...', workPeak: '...', localInfra: '...', catchment: 'Querying...' }
+                };
+                
+                properties.push(newProperty);
+                rebuildPayloadMatrixUI();
+                
+                runPropertyMatrixEvaluations(newProperty);
+                fetchPropertySchoolCatchment(newProperty, properties.length - 1);
+
+                pin.on('dragend', function() {
+                    runPropertyMatrixEvaluations(newProperty);
+                    fetchPropertySchoolCatchment(newProperty, properties.indexOf(newProperty));
+                });
+
+                activateHousePlacementMode(); // Auto reset button tool state cleanly
+            }
+        }
+
+        function clearCompleteCanvas() {
+            boundaryLayers.clearLayers();
+            catchmentLayers.clearLayers();
+            properties.forEach(p => map.removeLayer(p.marker));
+            properties = [];
+            for (let key in anchors) {
+                if (anchors[key]) {
+                    map.removeLayer(anchors[key].marker);
+                    anchors[key] = null;
+                }
+                const btn = document.getElementById(`slot-${key}`);
+                if(btn) btn.classList.remove('set', 'active');
+            }
+            document.getElementById('layer-catchment-high').checked = false;
+            activeSlotType = null;
+            isHousePlacementActive = false;
+            document.getElementById('house-trigger-btn').style.background = '#0f172a';
+            rebuildPayloadMatrixUI();
+        }
+
+        map.on('click', handleCanvasMapTaps);
+    </script>
+</body>
+</html>
