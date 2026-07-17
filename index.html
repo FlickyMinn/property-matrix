@@ -44,13 +44,11 @@
         .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
         .checkbox-item input { width: auto; }
 
-        /* School Filter Controls */
         .school-control-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px; margin-top: 6px; }
         .range-slider-label { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; color: #1e40af; }
         .radius-slider { -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: #bfdbfe; outline: none; margin: 8px 0; }
         .radius-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #2563eb; cursor: pointer; }
 
-        /* Traffic Control Module Styling */
         .traffic-control-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-top: 6px; }
         .traffic-slider-container { margin: 8px 0; }
         .traffic-slider { 
@@ -81,30 +79,19 @@
         .badge-peak { background: #fee2e2; color: #991b1b; }
         .badge-off { background: #dcfce7; color: #166534; }
 
-        /* Distinct tags for school sectors */
         .school-tag { display: inline-block; padding: 1px 4px; border-radius: 3px; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; margin-top: 2px; }
         .school-tag-public { background: #dcfce7; color: #15803d; }
         .school-tag-private { background: #dbeafe; color: #1d4ed8; }
         .school-tag-catholic { background: #f3e8ff; color: #6b21a8; }
+
+        .delete-btn { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; cursor: pointer; margin-top: 4px; width: auto; display: inline-block; }
+        .delete-btn:hover { background: #f87171; color: white; }
 
         #map { flex: 1; width: 100%; z-index: 1; }
         
         .map-legend { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); line-height: 1.5; font-size: 0.8rem; min-width: 180px; z-index: 1000; color: #334155; }
         .legend-title { font-weight: 700; margin-bottom: 4px; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px; }
         .legend-item { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
-
-        /* Dynamic Map Labels */
-        .school-map-label {
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid #2563eb;
-            color: #1e40af;
-            font-weight: 700;
-            font-size: 0.7rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-            white-space: nowrap;
-        }
 
         @media (min-width: 768px) {
             .mobile-header { display: none; }
@@ -134,7 +121,7 @@
 
             <div class="section-title">1. Search or Drop Property</div>
             <div class="form-group" style="margin-top:6px; display:flex; gap:6px;">
-                <input type="text" id="target-city" placeholder="Type Address: e.g. Mount Samson, QLD" value="Mount Samson, QLD">
+                <input type="text" id="target-city" placeholder="Type Address: e.g. McDowall, QLD" value="McDowall, QLD">
                 <button class="primary" onclick="teleportToGlobalTarget()" style="width:90px;">Find</button>
             </div>
             <button id="house-trigger-btn" class="primary" style="background:#16a34a; margin-top:2px;" onclick="activateHousePlacementMode()">📍 Drop Prospective House on Map</button>
@@ -173,9 +160,7 @@
                     </div>
                 </div>
 
-                <div class="active-zones-list" id="zones-payload">
-                    <!-- Dynamic commute chips -->
-                </div>
+                <div class="active-zones-list" id="zones-payload"></div>
             </div>
 
             <div class="section-title">4. Dynamic School Filters (Global API)</div>
@@ -243,9 +228,8 @@
         let anchors = { work: null, 'hospital-1': null, 'amenity-1': null };
         let properties = [];
         let selectedHouseId = null;
-        let currentSearchRadiusMeters = 3000; // Default 3km
+        let currentSearchRadiusMeters = 3000;
 
-        // Custom Multi-Commute Zones State
         let commuteZones = [
             { id: 1, timeMinutes: 15, trafficMultiplier: 1.0, color: '#22c55e', label: '15m (Fluid)' },
             { id: 2, timeMinutes: 30, trafficMultiplier: 1.6, color: '#ef4444', label: '30m (Heavy)' }
@@ -291,21 +275,13 @@
             const badge = document.getElementById('traffic-level-badge');
             const multiplier = parseFloat(val);
             if (multiplier <= 1.1) {
-                badge.innerText = 'Fluid';
-                badge.style.background = '#dcfce7';
-                badge.style.color = '#166534';
+                badge.innerText = 'Fluid'; badge.style.background = '#dcfce7'; badge.style.color = '#166534';
             } else if (multiplier <= 1.5) {
-                badge.innerText = 'Moderate';
-                badge.style.background = '#fef9c3';
-                badge.style.color = '#854d0e';
+                badge.innerText = 'Moderate'; badge.style.background = '#fef9c3'; badge.style.color = '#854d0e';
             } else if (multiplier <= 1.9) {
-                badge.innerText = 'Heavy';
-                badge.style.background = '#fee2e2';
-                badge.style.color = '#991b1b';
+                badge.innerText = 'Heavy'; badge.style.background = '#fee2e2'; badge.style.color = '#991b1b';
             } else {
-                badge.innerText = 'Gridlock';
-                badge.style.background = '#f87171';
-                badge.style.color = 'white';
+                badge.innerText = 'Gridlock'; badge.style.background = '#f87171'; badge.style.color = 'white';
             }
         }
 
@@ -333,11 +309,7 @@
             else if (mult > 1.9) labelSuffix = 'Gridlock';
 
             const newZone = {
-                id: Date.now(),
-                timeMinutes: mins,
-                trafficMultiplier: mult,
-                color: color,
-                label: `${mins}m (${labelSuffix})`
+                id: Date.now(), timeMinutes: mins, trafficMultiplier: mult, color: color, label: `${mins}m (${labelSuffix})`
             };
 
             commuteZones.push(newZone);
@@ -358,10 +330,7 @@
                 const item = document.createElement('div');
                 item.className = 'zone-chip';
                 item.style.borderLeftColor = z.color;
-                item.innerHTML = `
-                    <span>⏱️ ${z.label}</span>
-                    <button onclick="removeCommuteZone(${z.id})">Remove</button>
-                `;
+                item.innerHTML = `<span>⏱️ ${z.label}</span><button onclick="removeCommuteZone(${z.id})">Remove</button>`;
                 container.appendChild(item);
             });
         }
@@ -405,16 +374,11 @@
 
         function refreshVisualLayers() {
             isochroneLayer.clearLayers();
-
             const activeHouse = properties.find(p => p.id === selectedHouseId);
             if (!activeHouse) return;
 
             const latlng = activeHouse.marker.getLatLng();
-
-            commuteZones.forEach(zone => {
-                fetchIsochroneForZone(latlng, zone);
-            });
-
+            commuteZones.forEach(zone => { fetchIsochroneForZone(latlng, zone); });
             renderSchoolsInProximityRadius(latlng);
             updateLegendUI();
         }
@@ -439,25 +403,18 @@
                 if (response.ok) {
                     const data = await response.json();
                     L.geoJSON(data, {
-                        style: function () {
-                            return { fillOpacity: 0.08, color: zone.color, weight: 2.5 };
-                        }
+                        style: function () { return { fillOpacity: 0.08, color: zone.color, weight: 2.5 }; }
                     }).addTo(isochroneLayer);
                 }
             } catch (e) {}
         }
 
-        // Live OpenStreetMap Overpass Spatial Engine (Works Worldwide)
+        // Optimized School Overpass Engine (Popups instead of laggy permanent tooltips)
         async function renderSchoolsInProximityRadius(centerLatLng) {
             schoolLayerGroup.clearLayers();
 
             L.circle(centerLatLng, {
-                color: '#2563eb',
-                fillColor: '#3b82f6',
-                fillOpacity: 0.03,
-                weight: 1.5,
-                dashArray: '4, 6',
-                radius: currentSearchRadiusMeters
+                color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.03, weight: 1.5, dashArray: '4, 6', radius: currentSearchRadiusMeters
             }).addTo(schoolLayerGroup);
 
             const overpassUrl = 'https://overpass-api.de/api/interpreter';
@@ -471,11 +428,7 @@
             `;
 
             try {
-                const response = await fetch(overpassUrl, {
-                    method: 'POST',
-                    body: query
-                });
-
+                const response = await fetch(overpassUrl, { method: 'POST', body: query });
                 if (!response.ok) return;
                 const data = await response.json();
 
@@ -518,6 +471,7 @@
                         const displaySector = sector.charAt(0).toUpperCase() + sector.slice(1);
                         const levelDesc = tags['isced:level'] || tags.grades || 'General Education';
 
+                        // Smooth click popup replacing heavy permanent tooltips
                         pin.bindPopup(`
                             <div style="font-family: sans-serif; line-height: 1.4;">
                                 <h4 style="margin: 0 0 2px; color: #1e40af;">${name}</h4>
@@ -526,12 +480,6 @@
                                 <p style="margin: 2px 0 0; font-size: 0.8rem; color: #16a34a; font-weight: 700;">Distance: ${distanceKm} km</p>
                             </div>
                         `);
-
-                        pin.bindTooltip(`${name} (${distanceKm}km)`, {
-                            permanent: true,
-                            direction: 'top',
-                            className: 'school-map-label'
-                        }).openTooltip();
 
                         matchedSchoolsList.push({
                             name: name,
@@ -566,16 +514,13 @@
             legendControl.onAdd = function () {
                 const div = L.DomUtil.create('div', 'map-legend');
                 div.innerHTML = `<div class="legend-title">Active Layers</div>`;
-                
                 commuteZones.forEach(z => {
                     div.innerHTML += `<div class="legend-item"><div style="width:12px; height:12px; border-radius:50%; background:${z.color}; opacity:0.6; display:inline-block;"></div><span>${z.label}</span></div>`;
                 });
-                
                 div.innerHTML += `<div class="legend-title" style="margin-top: 8px;">Sectors Covered</div>`;
                 div.innerHTML += `<div class="legend-item"><div style="width:10px; height:10px; background:#22c55e; border-radius:50%;"></div><span>State/Public</span></div>`;
                 div.innerHTML += `<div class="legend-item"><div style="width:10px; height:10px; background:#3b82f6; border-radius:50%;"></div><span>Private/Indep</span></div>`;
                 div.innerHTML += `<div class="legend-item"><div style="width:10px; height:10px; background:#eab308; border-radius:50%;"></div><span>Catholic</span></div>`;
-                
                 return div;
             };
             legendControl.addTo(map);
@@ -599,7 +544,6 @@
             }
 
             renderSchoolsInProximityRadius(pLatLng);
-            
             rebuildPayloadMatrixUI();
             if (selectedHouseId === prop.id) {
                 renderLiveDrivingCommutes(prop);
@@ -619,12 +563,7 @@
                         if (res.ok) {
                             const data = await res.json();
                             L.geoJSON(data, {
-                                style: {
-                                    color: routeColors[key],
-                                    weight: 4,
-                                    opacity: 0.8,
-                                    dashArray: key === 'work' ? null : '5, 10'
-                                }
+                                style: { color: routeColors[key], weight: 4, opacity: 0.8, dashArray: key === 'work' ? null : '5, 10' }
                             }).addTo(liveRoutesLayer);
                         }
                     } catch(e) {}
@@ -638,7 +577,35 @@
             if (targetProp) {
                 renderLiveDrivingCommutes(targetProp);
                 refreshVisualLayers();
+                map.panTo(targetProp.marker.getLatLng());
             }
+            rebuildPayloadMatrixUI();
+        }
+
+        function deleteProperty(id, event) {
+            event.stopPropagation(); // Prevent row click event execution
+            const targetProp = properties.find(p => p.id === id);
+            if (targetProp) {
+                map.removeLayer(targetProp.marker);
+            }
+            properties = properties.filter(p => p.id !== id);
+            
+            if (selectedHouseId === id) {
+                selectedHouseId = properties.length > 0 ? properties[0].id : null;
+                liveRoutesLayer.clearLayers();
+                schoolLayerGroup.clearLayers();
+                isochroneLayer.clearLayers();
+                if (legendControl) map.removeControl(legendControl);
+            }
+
+            if (selectedHouseId) {
+                const nextSelected = properties.find(p => p.id === selectedHouseId);
+                if (nextSelected) {
+                    renderLiveDrivingCommutes(nextSelected);
+                    refreshVisualLayers();
+                }
+            }
+
             rebuildPayloadMatrixUI();
         }
 
@@ -653,7 +620,11 @@
                 const isSelected = selectedHouseId === p.id ? 'class="selected"' : '';
                 body.innerHTML += `
                     <tr ${isSelected} onclick="selectHouseRow(${p.id})" style="cursor:pointer;">
-                        <td><strong>House #${idx+1}</strong><br><span style="font-size:0.6rem; color:#64748b;">Lat: ${p.marker.getLatLng().lat.toFixed(3)}<br>Lon: ${p.marker.getLatLng().lng.toFixed(3)}</span></td>
+                        <td>
+                            <strong>House #${idx+1}</strong><br>
+                            <span style="font-size:0.6rem; color:#64748b;">Lat: ${p.marker.getLatLng().lat.toFixed(3)}<br>Lon: ${p.marker.getLatLng().lng.toFixed(3)}</span><br>
+                            <button class="delete-btn" onclick="deleteProperty(${p.id}, event)">🗑️ Delete</button>
+                        </td>
                         <td>
                             <span class="badge badge-off">Clear: ${p.metrics.workClear}</span><br>
                             <span class="badge badge-peak">Peak: ${p.metrics.workPeak}</span>
@@ -671,6 +642,10 @@
                 metrics: { workClear: '...', workPeak: '...', localInfra: '...' }
             };
             
+            pin.on('click', function(e) {
+                selectHouseRow(newProperty.id);
+            });
+
             properties.push(newProperty);
             selectedHouseId = newProperty.id; 
             rebuildPayloadMatrixUI();
